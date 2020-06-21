@@ -1,7 +1,7 @@
 'use strict';
 
 const moment = require('moment-timezone');
-const sinon = require('sinon');
+const { useFakeTimers } = require('sinon');
 
 describe('date', () => {
   const Hexo = require('../../../lib/hexo');
@@ -10,7 +10,7 @@ describe('date', () => {
   let clock;
 
   before(() => {
-    clock = sinon.useFakeTimers(Date.now());
+    clock = useFakeTimers(Date.now());
   });
 
   after(() => {
@@ -223,5 +223,17 @@ describe('date', () => {
     ctx.config.timezone = 'UTC';
     timeTag(Date.now(), 'LLL').should.eql('<time datetime="' + moment().toISOString() + '">' + moment().tz('UTC').format('LLL') + '</time>');
     ctx.config.timezone = '';
+  });
+
+  it('toMomentLocale', () => {
+    const toMomentLocale = dateHelper.toMomentLocale;
+
+    (toMomentLocale(undefined) === undefined).should.be.true;
+    toMomentLocale(null).should.eql('en');
+    toMomentLocale('').should.eql('en');
+    toMomentLocale('en').should.eql('en');
+    toMomentLocale('default').should.eql('en');
+    toMomentLocale('zh-CN').should.eql('zh-cn');
+    toMomentLocale('zh_CN').should.eql('zh-cn');
   });
 });

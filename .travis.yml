@@ -1,23 +1,27 @@
+os: linux
+
 language: node_js
 
-sudo: false
+addons:
+  apt:
+    packages:
+    - time
 
 cache:
-  apt: true
-  directories:
-    - node_modules
+  npm: true
 
 node_js:
-  - "6"
-  - "8"
-  - "node"
+  - "10"
+  - "12"
+  - "14"
 
 script:
-  - npm run eslint
-  - npm run test-cov
+  - ./test/benchmark.sh;
 
-after_script:
-  - npm install coveralls
-  - cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
-
-dist: trusty
+deploy:
+  provider: surge
+  project: ./0x/
+  skip_cleanup: true
+  domain: "${TRAVIS_COMMIT}-${TRAVIS_NODE_VERSION}-hexo.surge.sh"
+  on:
+    all_branches: true

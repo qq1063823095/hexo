@@ -27,7 +27,7 @@ describe('paginator', () => {
     const total = data.total;
     const pages = data.pages;
     const space = data.space || '&hellip;';
-    const prevNext = data.hasOwnProperty('prev_next') ? data.prev_next : true;
+    const prevNext = Object.prototype.hasOwnProperty.call(data, 'prev_next') ? data.prev_next : true;
     let num;
 
     if (prevNext && current > 1) {
@@ -279,5 +279,27 @@ describe('paginator', () => {
     const result = paginator({});
 
     result.should.eql('');
+  });
+
+  it('escape', () => {
+    const result = paginator({
+      current: 2,
+      prev_text: '<foo>',
+      next_text: '<bar>',
+      escape: false
+    });
+
+    result.should.eql([
+      '<a class="extend prev" rel="prev" href="/">',
+      '<foo></a>',
+      '<a class="page-number" href="/">1</a>',
+      '<span class="page-number current">2</span>',
+      '<a class="page-number" href="/page/3/">3</a>',
+      '<a class="page-number" href="/page/4/">4</a>',
+      '<span class="space">&hellip;</span>',
+      '<a class="page-number" href="/page/10/">10</a>',
+      '<a class="extend next" rel="next" href="/page/3/">',
+      '<bar></a>'
+    ].join(''));
   });
 });

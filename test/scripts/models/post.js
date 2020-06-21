@@ -1,8 +1,8 @@
 'use strict';
 
-const sinon = require('sinon');
-const pathFn = require('path');
+const { join, sep } = require('path');
 const Promise = require('bluebird');
+const { full_url_for } = require('hexo-util');
 
 describe('Post', () => {
   const Hexo = require('../../../lib/hexo');
@@ -44,24 +44,20 @@ describe('Post', () => {
   });
 
   it('source - required', () => {
-    const errorCallback = sinon.spy(err => {
+    return Post.insert({}).then(() => {
+      should.fail('Return value must be rejected');
+    }, err => {
       err.should.have.property('message', '`source` is required!');
-    });
-
-    return Post.insert({}).catch(errorCallback).finally(() => {
-      errorCallback.calledOnce.should.be.true;
     });
   });
 
   it('slug - required', () => {
-    const errorCallback = sinon.spy(err => {
-      err.should.have.property('message', '`slug` is required!');
-    });
-
     return Post.insert({
       source: 'foo.md'
-    }).catch(errorCallback).finally(() => {
-      errorCallback.calledOnce.should.be.true;
+    }).then(() => {
+      should.fail('Return value must be rejected');
+    }, err => {
+      err.should.have.property('message', '`slug` is required!');
     });
   });
 
@@ -84,6 +80,19 @@ describe('Post', () => {
     });
   });
 
+  it('permalink - should be encoded', () => {
+    const slug = 'bár';
+    hexo.config.url = 'http://fôo.com';
+    return Post.insert({
+      source: 'foo.md',
+      slug
+    }).then(data => {
+      data.permalink.should.eql(full_url_for.call(hexo, slug));
+      hexo.config.url = 'http://yoursite.com';
+      return Post.removeById(data._id);
+    });
+  });
+
   it('permalink - virtual - when set relative_link', () => {
     hexo.config.root = '/';
     hexo.config.relative_link = true;
@@ -92,6 +101,7 @@ describe('Post', () => {
       slug: 'bar'
     }).then(data => {
       data.permalink.should.eql(hexo.config.url + '/' + data.path);
+      hexo.config.relative_link = false;
       return Post.removeById(data._id);
     });
   });
@@ -121,11 +131,47 @@ describe('Post', () => {
     });
   });
 
+  it('permalink - trailing_index', () => {
+    hexo.config.pretty_urls.trailing_index = false;
+    return Post.insert({
+      source: 'foo.md',
+      slug: 'bar/index.html'
+    }).then(data => {
+      data.permalink.should.eql(hexo.config.url + '/' + data.path.replace(/index\.html$/, ''));
+      hexo.config.pretty_urls.trailing_index = true;
+      return Post.removeById(data._id);
+    });
+  });
+
+  it('permalink - trailing_html', () => {
+    hexo.config.pretty_urls.trailing_html = false;
+    return Post.insert({
+      source: 'foo.md',
+      slug: 'bar/foo.html'
+    }).then(data => {
+      data.permalink.should.eql(hexo.config.url + '/' + data.path.replace(/\.html$/, ''));
+      hexo.config.pretty_urls.trailing_html = true;
+      return Post.removeById(data._id);
+    });
+  });
+
+  it('permalink - trailing_html - index.html', () => {
+    hexo.config.pretty_urls.trailing_html = false;
+    return Post.insert({
+      source: 'foo.md',
+      slug: 'bar/index.html'
+    }).then(data => {
+      data.permalink.should.eql(hexo.config.url + '/' + data.path);
+      hexo.config.pretty_urls.trailing_html = true;
+      return Post.removeById(data._id);
+    });
+  });
+
   it('full_source - virtual', () => Post.insert({
     source: 'foo.md',
     slug: 'bar'
   }).then(data => {
-    data.full_source.should.eql(pathFn.join(hexo.source_dir, data.source));
+    data.full_source.should.eql(join(hexo.source_dir, data.source));
     return Post.removeById(data._id);
   }));
 
@@ -133,7 +179,7 @@ describe('Post', () => {
     source: 'foo.md',
     slug: 'bar'
   }).then(data => {
-    data.asset_dir.should.eql(pathFn.join(hexo.source_dir, 'foo') + pathFn.sep);
+    data.asset_dir.should.eql(join(hexo.source_dir, 'foo') + sep);
     return Post.removeById(data._id);
   }));
 
@@ -380,10 +426,10 @@ describe('Post', () => {
     slug: 'bar'
   }).then(post => post.setTags(['foo', 'bar', 'baz'])
     .thenReturn(Post.findById(post._id))).then(post => Post.removeById(post._id)).then(post => {
-    PostTag.find({post_id: post._id}).length.should.eql(0);
-    Tag.findOne({name: 'foo'}).posts.length.should.eql(0);
-    Tag.findOne({name: 'bar'}).posts.length.should.eql(0);
-    Tag.findOne({name: 'baz'}).posts.length.should.eql(0);
+    PostTag.find({post_id: post._id}).should.have.lengthOf(0);
+    Tag.findOne({name: 'foo'}).posts.should.have.lengthOf(0);
+    Tag.findOne({name: 'bar'}).posts.should.have.lengthOf(0);
+    Tag.findOne({name: 'baz'}).posts.should.have.lengthOf(0);
   }));
 
   it('remove PostCategory references when a post is removed', () => Post.insert({
@@ -391,10 +437,10 @@ describe('Post', () => {
     slug: 'bar'
   }).then(post => post.setCategories(['foo', 'bar', 'baz'])
     .thenReturn(Post.findById(post._id))).then(post => Post.removeById(post._id)).then(post => {
-    PostCategory.find({post_id: post._id}).length.should.eql(0);
-    Category.findOne({name: 'foo'}).posts.length.should.eql(0);
-    Category.findOne({name: 'bar'}).posts.length.should.eql(0);
-    Category.findOne({name: 'baz'}).posts.length.should.eql(0);
+    PostCategory.find({post_id: post._id}).should.have.lengthOf(0);
+    Category.findOne({name: 'foo'}).posts.should.have.lengthOf(0);
+    Category.findOne({name: 'bar'}).posts.should.have.lengthOf(0);
+    Category.findOne({name: 'baz'}).posts.should.have.lengthOf(0);
   }));
 
   it('remove related assets when a post is removed', () => Post.insert({
@@ -405,6 +451,6 @@ describe('Post', () => {
     Asset.insert({_id: 'bar', path: 'bar'}),
     Asset.insert({_id: 'baz', path: 'bar'})
   ]).thenReturn(post)).then(post => Post.removeById(post._id)).then(post => {
-    Asset.find({post: post._id}).length.should.eql(0);
+    Asset.find({post: post._id}).should.have.lengthOf(0);
   }));
 });

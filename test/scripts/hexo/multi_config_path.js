@@ -163,16 +163,16 @@ describe('config flag handling', () => {
     mcp(base, notFile).should.eql(pathFn.join(base, '_config.yml'));
     hexo.log.reader[0].type.should.eql('warning');
     hexo.log.reader[0].msg.should.eql('Config file ' + notFile
-                          + ' not found, using default.');
+      + ' not found, using default.');
   });
 
   it('1 not found file warning absolute', () => {
-    let notFile = '/tmp/not_a_file.json';
+    const notFile = '/tmp/not_a_file.json';
 
     mcp(base, notFile).should.eql(pathFn.join(base, '_config.yml'));
     hexo.log.reader[0].type.should.eql('warning');
     hexo.log.reader[0].msg.should.eql('Config file ' + notFile
-                          + ' not found, using default.');
+      + ' not found, using default.');
   });
 
   it('combined config output', () => {
@@ -194,8 +194,7 @@ describe('config flag handling', () => {
 
     mcp(base, 'notafile.yml,alsonotafile.json').should.not.eql(combinedPath);
     hexo.log.reader[11].type.should.eql('error');
-    hexo.log.reader[11].msg.should.eql('No config files found.'
-                                     + ' Using _config.yml.');
+    hexo.log.reader[11].msg.should.eql('No config files found. Using _config.yml.');
   });
 
   it('combine config output with absolute paths', () => {
@@ -256,8 +255,8 @@ describe('config flag handling', () => {
   });
 
   it('write multiconfig to specified path', () => {
-    let outputPath = osFn.tmpdir();
-    let combinedPath = pathFn.join(outputPath, '_multiconfig.yml');
+    const outputPath = osFn.tmpdir();
+    const combinedPath = pathFn.join(outputPath, '_multiconfig.yml');
 
     mcp(base, 'test1.yml', outputPath).should.not.eql(combinedPath);
     mcp(base, 'test1.yml,test2.yml', outputPath).should.eql(combinedPath);
@@ -265,6 +264,9 @@ describe('config flag handling', () => {
     mcp(base, 'test1.json,test2.json', outputPath).should.eql(combinedPath);
     mcp(base, 'notafile.yml,test1.json', outputPath).should.eql(combinedPath);
     mcp(base, 'notafile.yml,alsonotafile.json', outputPath).should.not.eql(combinedPath);
+
+    // delete /tmp/_multiconfig.yml
+    fs.unlinkSync(combinedPath);
 
     hexo.log.reader[1].type.should.eql('debug');
     hexo.log.reader[1].msg.should.eql(`Writing _multiconfig.yml to ${combinedPath}`);
@@ -275,7 +277,6 @@ describe('config flag handling', () => {
     hexo.log.reader[7].type.should.eql('info');
     hexo.log.reader[7].msg.should.eql('Config based on 1 files');
     hexo.log.reader[11].type.should.eql('error');
-    hexo.log.reader[11].msg.should.eql('No config files found.'
-                                     + ' Using _config.yml.');
+    hexo.log.reader[11].msg.should.eql('No config files found. Using _config.yml.');
   });
 });

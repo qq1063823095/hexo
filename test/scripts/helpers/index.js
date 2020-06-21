@@ -7,6 +7,7 @@ describe('Helpers', () => {
   require('./favicon_tag');
   require('./feed_tag');
   require('./fragment_cache');
+  require('./full_url_for');
   require('./gravatar');
   require('./image_tag');
   require('./is');
@@ -18,6 +19,7 @@ describe('Helpers', () => {
   require('./list_tags');
   require('./mail_to');
   require('./markdown');
+  require('./meta_generator');
   require('./number_format');
   require('./open_graph');
   require('./paginator');
